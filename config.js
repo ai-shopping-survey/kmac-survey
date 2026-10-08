@@ -2,7 +2,7 @@
 window.CONFIG = {
   // 구글 Apps Script 배포 후 받은 웹 앱 URL을 따옴표 안에 붙여 넣는다.
   // 비워 두면 응답이 저장되지 않고, 마지막에 데이터 파일 다운로드 버튼만 나온다(테스트용).
-  ENDPOINT: "",
+  ENDPOINT: "https://script.google.com/macros/s/AKfycbz9Z4RCaWfrlUE2PNitNV45lWxJRH4zee17iiWaEf_Ls7meOuaAKdtBB-UdD39_D9PbTw/exec",
 
   STUDY_ID: "KMAC22-S2",
   VERSION: "2.0",
