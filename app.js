@@ -277,7 +277,7 @@
       if (!$("#pc").checked) { $("#err").textContent = "연락처 수집에 동의해 주세요."; return; }
       $("#send").disabled = true;
       await post({ type: "contact", study: C.STUDY_ID, pid: S.pid, phone: ph, test: S.test ? 1 : 0, at: new Date().toISOString() });
-      render(`<h1>감사합니다</h1><div class="card"><p>연락처가 접수되었습니다. 응답 확인 후 기프티콘을 보내 드리겠습니다. 창을 닫으셔도 됩니다.</p></div>`);
+      render(`<h1>감사합니다</h1><div class="card"><p>연락처가 접수되었습니다. 응답 확인 후 추첨을 통해 10분께 커피 기프티콘을 보내 드리겠습니다. 창을 닫으셔도 됩니다.</p></div>`);
     };
   }
 
