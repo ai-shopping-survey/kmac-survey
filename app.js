@@ -66,11 +66,11 @@
     if (cond === "confirm") return `<div class="phone"><div class="notif-head">AI 쇼핑 비서</div>
       <div class="bubble">평소 구매하시던 ${esc(p.name)}${p.eul} 장바구니에 담아 두었어요. 이번 주에 필요하신가요?</div>
       <div class="row mock"><span class="mbtn primary">네, 필요해요</span><span class="mbtn">아니요, 빼 주세요</span></div>
-      <div class="small muted">‘네’라고 답해야 구매됩니다.</div></div>`;
+      <div class="small muted">내일 오전 9시까지 ‘네’라고 답해야 구매되며, 답하지 않으면 구매되지 않습니다.</div></div>`;
     return `<div class="phone"><div class="notif-head">AI 쇼핑 비서</div>
       <div class="bubble">평소 구매하시던 ${esc(p.name)}${p.eul} 이번 주 배송으로 주문했어요.</div>
       <div class="row mock"><span class="mbtn">주문 취소</span></div>
-      <div class="small muted">취소하지 않으면 그대로 배송됩니다.</div></div>`;
+      <div class="small muted">내일 오전 9시까지 취소하지 않으면 그대로 배송됩니다.</div></div>`;
   }
 
   // ---------- 1. 동의 ----------
@@ -138,6 +138,9 @@
       }
     }
     S.order = shuffle(Object.keys(PRODUCTS));
+    // 가운데 보기를 고르는 경향(타협 효과)을 막기 위해 위임 선택 보기 순서를 참가자마다 무작위로 정한다
+    S.choice_opts = shuffle([["recommend", "추천만 해 주세요 (구매는 내가 결정)"], ["confirm", "장바구니에 담아 두고 먼저 물어봐 주세요"], ["auto", "자동으로 주문해 주세요 (필요 없으면 내가 취소)"]]);
+    S.choice_opt_order = S.choice_opts.map((o) => o[0]).join("-");
   }
 
   // ---------- 3. 안내 ----------
@@ -155,12 +158,17 @@
   }
 
   // ---------- 4. 시나리오 2개 ----------
+  // 순서: 수용도(종속변수) → 이 상품의 위임 선택 → 낭비 우려(매개변수).
+  // 매개변수 문항이 종속변수 응답을 유도하지 않도록 종속변수를 먼저 묻는다.
   function pageScenario(k) {
     progress("s" + (k + 1));
     const pk = S.order[k], p = PRODUCTS[pk], t0 = now();
-    const items = shuffle(ITEMS);
-    let qs = items.map(([id, text]) => `<div class="q"><div class="q-title">${esc(text)}</div>${likert(`s${k}_${id}`, "전혀 그렇지 않다", "매우 그렇다")}</div>`);
-    if (k === 2) qs.splice(2, 0, `<div class="q"><div class="q-title">응답 확인을 위한 문항입니다. 이 문항에는 3을 선택해 주세요.</div>${likert("att", "전혀 그렇지 않다", "매우 그렇다")}</div>`);
+    const q = ([id, text]) => `<div class="q"><div class="q-title">${esc(text)}</div>${likert(`s${k}_${id}`, "전혀 그렇지 않다", "매우 그렇다")}</div>`;
+    const accItems = shuffle(ITEMS.filter((x) => x[0].startsWith("accept")));
+    const wasteItems = shuffle(ITEMS.filter((x) => x[0].startsWith("waste")));
+    const opts = S.choice_opts;
+    const wasteQs = wasteItems.map(q);
+    if (k === 2) wasteQs.splice(1, 0, `<div class="q"><div class="q-title">응답 확인을 위한 문항입니다. 이 문항에는 3을 선택해 주세요.</div>${likert("att", "전혀 그렇지 않다", "매우 그렇다")}</div>`);
     render(`
       <div class="muted">상황 ${k + 1} / 4</div>
       <h1>${esc(p.name)}${p.eul} 다시 구매할 때가 되었습니다</h1>
@@ -169,14 +177,18 @@
         <div class="hist-line">지난 몇 달 동안 일정한 간격으로 꾸준히 구매해 온 상품입니다.</div>
         ${agentScreen(S.cond, pk)}
       </div>
-      <div class="card"><p class="muted" style="margin-bottom:14px">위 상황에 대해 각 문장에 얼마나 동의하시나요?</p>${qs.join("")}</div>
+      <div class="card"><p class="muted" style="margin-bottom:14px">위 상황에 대해 각 문장에 얼마나 동의하시나요?</p>${accItems.map(q).join("")}</div>
+      <div class="card"><div class="q-title" style="margin-bottom:8px">이 서비스를 실제로 이용한다면, 이 상품을 AI 비서가 어떻게 처리해 주기를 원하시나요?</div>${radios(`s${k}_choice`, opts)}</div>
+      <div class="card"><p class="muted" style="margin-bottom:14px">각 문장에 얼마나 동의하시나요?</p>${wasteQs.join("")}</div>
       <div class="err" id="err"></div><div class="nav"><button class="btn" id="next">${k < 3 ? "다음 상황 보기" : "다음"}</button></div>`);
     $("#next").onclick = () => {
-      const names = ITEMS.map(([id]) => `s${k}_${id}`).concat(k === 2 ? ["att"] : []);
+      const names = ITEMS.map(([id]) => `s${k}_${id}`).concat([`s${k}_choice`], k === 2 ? ["att"] : []);
       if (missing(names).length) { $("#err").textContent = "응답하지 않은 문항이 있어요."; return; }
-      const r = { pos: k + 1, product: pk, perish: p.perish, sec: Math.round((now() - t0) / 1000), item_order: items.map((x) => x[0]).join("-") };
+      const r = { pos: k + 1, product: pk, perish: p.perish, sec: Math.round((now() - t0) / 1000),
+        item_order: accItems.concat(wasteItems).map((x) => x[0]).join("-"), choice: val(`s${k}_choice`) };
       ITEMS.forEach(([id]) => (r[id] = +val(`s${k}_${id}`)));
       r.accept = (r.accept1 + r.accept2) / 2; r.waste = (r.waste1 + r.waste2) / 2;
+      S.choice[pk] = r.choice;
       if (k === 2) S.att = +val("att");
       S.scen.push(r);
       k < 3 ? pageScenario(k + 1) : pageAfter();
@@ -186,23 +198,15 @@
   // ---------- 5. 위임 선택과 조작 점검 ----------
   function pageAfter() {
     progress("after");
-    // 가운데 보기를 고르는 경향(타협 효과)을 막기 위해 보기 순서를 참가자마다 무작위로 정한다
-    const opts = shuffle([["recommend", "추천만 해 주세요 (구매는 내가 결정)"], ["confirm", "장바구니에 담아 두고 먼저 물어봐 주세요"], ["auto", "자동으로 주문해 주세요 (필요 없으면 내가 취소)"]]);
-    S.choice_opt_order = opts.map((o) => o[0]).join("-");
-    const pks = shuffle(S.order);
     render(`
       <h1>마지막 질문입니다</h1>
-      <div class="card"><div class="q-title" style="margin-bottom:8px">1. 이 서비스를 실제로 이용한다면, 각 상품을 AI 비서가 어떻게 처리해 주기를 원하시나요?</div>
-        ${pks.map((pk) => `<div class="q"><div style="margin:6px 0">${productCard(pk)}</div>${radios(`choice_${pk}`, opts)}</div>`).join("")}</div>
-      <div class="card"><div class="q-title" style="margin-bottom:8px">2. 방금 본 상황들에서 AI 쇼핑 비서는 상품을 어떻게 처리했나요?</div>
+      <div class="card"><div class="q-title" style="margin-bottom:8px">1. 방금 본 상황들에서 AI 쇼핑 비서는 상품을 어떻게 처리했나요?</div>
         ${radios("mc_interface", shuffle([["confirm", "장바구니에 담아 두고 구매할지 물어봤다"], ["auto", "묻지 않고 바로 주문했다"]]).concat([["dk", "잘 모르겠다"]]))}</div>
-      <div class="card"><div class="q-title" style="margin-bottom:8px">3. 방금 본 상황들이 실제로 일어날 법하다고 느끼셨나요?</div>
+      <div class="card"><div class="q-title" style="margin-bottom:8px">2. 방금 본 상황들이 실제로 일어날 법하다고 느끼셨나요?</div>
         ${likert("realism", "전혀 그렇지 않다", "매우 그렇다")}</div>
       <div class="err" id="err"></div><div class="nav"><button class="btn" id="next">제출하기</button></div>`);
     $("#next").onclick = () => {
-      const names = pks.map((pk) => `choice_${pk}`).concat(["mc_interface", "realism"]);
-      if (missing(names).length) { $("#err").textContent = "응답하지 않은 문항이 있어요."; return; }
-      pks.forEach((pk) => (S.choice[pk] = val(`choice_${pk}`)));
+      if (missing(["mc_interface", "realism"]).length) { $("#err").textContent = "응답하지 않은 문항이 있어요."; return; }
       S.manip.mc_interface = val("mc_interface"); S.manip.realism = +val("realism");
       submit();
     };
@@ -230,7 +234,7 @@
       d[`${pe}_accept`] = xs.reduce((a, r) => a + r.accept, 0) / xs.length;
       d[`${pe}_waste`] = xs.reduce((a, r) => a + r.waste, 0) / xs.length;
     });
-    d.trials = S.scen.map((r) => Object.assign({}, r, { choice: S.choice[r.product] }));
+    d.trials = S.scen.map((r) => Object.assign({}, r));
     return d;
   }
   async function post(data) {
