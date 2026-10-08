@@ -5,7 +5,7 @@ window.CONFIG = {
   ENDPOINT: "https://script.google.com/macros/s/AKfycbz9Z4RCaWfrlUE2PNitNV45lWxJRH4zee17iiWaEf_Ls7meOuaAKdtBB-UdD39_D9PbTw/exec",
 
   STUDY_ID: "KMAC22-S2",
-  VERSION: "2.0",
+  VERSION: "2.1",
 
   PRICE: "7,900원",   // 네 상품 공통 가격 (포장 단위를 조정해 가격을 맞춤)
 
