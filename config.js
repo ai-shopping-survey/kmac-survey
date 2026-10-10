@@ -2,10 +2,10 @@
 window.CONFIG = {
   // 구글 Apps Script 배포 후 받은 웹 앱 URL을 따옴표 안에 붙여 넣는다.
   // 비워 두면 응답이 저장되지 않고, 마지막에 데이터 파일 다운로드 버튼만 나온다(테스트용).
-  ENDPOINT: "https://script.google.com/macros/s/AKfycbz9Z4RCaWfrlUE2PNitNV45lWxJRH4zee17iiWaEf_Ls7meOuaAKdtBB-UdD39_D9PbTw/exec",
+  ENDPOINT: "https://script.google.com/macros/s/AKfycbxvMSFyqxMG2ULgHAVAxMoliCIxSm08Kpn1ks1FakoXw8cQNwXT9o2e5CpZcSfWgaUp4A/exec",
 
   STUDY_ID: "KMAC22-S2",
-  VERSION: "2.2",
+  VERSION: "3.0",
 
   PRICE: "7,900원",   // 네 상품 공통 가격 (포장 단위를 조정해 가격을 맞춤)
 
