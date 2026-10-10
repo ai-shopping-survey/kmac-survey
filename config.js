@@ -12,6 +12,6 @@ window.CONFIG = {
   // 보상 안내 문구 (동의서와 마지막 화면에 표시)
   REWARD_TEXT: "설문을 끝까지 마치고 주의 확인 문항에 바르게 답한 분 가운데 추첨을 통해 10명에게 스타벅스 아이스 아메리카노(T) 기프티콘을 드립니다.",
   CONTACT_EMAIL: "jskim7394@yonsei.ac.kr",
-  RESEARCHERS: "김재상, 여민서 (연세대학교 도시공학과)",
+  RESEARCHERS: "Team Farfalle(연세대학교 도시공학과 김재상, 여민서)",
   IRB_TEXT: ""        // 심의 번호가 있으면 입력
 };
